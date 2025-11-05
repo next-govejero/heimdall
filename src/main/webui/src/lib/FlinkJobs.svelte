@@ -2,7 +2,7 @@
     import axios from 'axios';
     import { format } from 'date-fns'
     import Fa from 'svelte-fa'
-    import { faImagePortrait, faChartColumn, faTable, faIdCard, faClock, faInfo, faGear } from '@fortawesome/free-solid-svg-icons'
+    import { faImagePortrait, faChartColumn, faTable, faIdCard, faClock, faInfo, faGear, faPlus, faTrash, faEdit } from '@fortawesome/free-solid-svg-icons'
 
     import { appConfig } from './stores/appConfig.js';
     import { settings } from './stores/settings.js';
@@ -18,6 +18,78 @@
     let activeSorting;
 
     let showSettingsModal = false;
+
+    // Custom endpoints management
+    let newEndpointKey = '';
+    let newEndpointTitle = '';
+    let newEndpointPattern = '';
+    let editingEndpointId = null;
+
+    function addCustomEndpoint() {
+        if (!newEndpointKey || !newEndpointTitle || !newEndpointPattern) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        // Check if key already exists in custom endpoints
+        const existingCustom = $settings.customEndpoints?.find(e => e.key === newEndpointKey);
+        if (existingCustom && (!editingEndpointId || editingEndpointId !== existingCustom.id)) {
+            alert('An endpoint with this key already exists');
+            return;
+        }
+
+        // Check if key conflicts with default endpoints
+        const defaultEndpoints = ['flink-ui', 'flink-api', 'metrics', 'logs'];
+        if (defaultEndpoints.includes(newEndpointKey) && !editingEndpointId) {
+            alert('This key is reserved for default endpoints');
+            return;
+        }
+
+        if (editingEndpointId) {
+            // Update existing endpoint
+            $settings.customEndpoints = $settings.customEndpoints.map(e =>
+                e.id === editingEndpointId
+                    ? { id: e.id, key: newEndpointKey, title: newEndpointTitle, pattern: newEndpointPattern }
+                    : e
+            );
+            editingEndpointId = null;
+        } else {
+            // Add new endpoint
+            const newEndpoint = {
+                id: Date.now().toString(),
+                key: newEndpointKey,
+                title: newEndpointTitle,
+                pattern: newEndpointPattern
+            };
+
+            $settings.customEndpoints = [...($settings.customEndpoints || []), newEndpoint];
+        }
+
+        // Clear form
+        newEndpointKey = '';
+        newEndpointTitle = '';
+        newEndpointPattern = '';
+    }
+
+    function editCustomEndpoint(endpoint) {
+        editingEndpointId = endpoint.id;
+        newEndpointKey = endpoint.key;
+        newEndpointTitle = endpoint.title;
+        newEndpointPattern = endpoint.pattern;
+    }
+
+    function deleteCustomEndpoint(endpointId) {
+        if (confirm('Are you sure you want to delete this endpoint?')) {
+            $settings.customEndpoints = $settings.customEndpoints.filter(e => e.id !== endpointId);
+        }
+    }
+
+    function cancelEdit() {
+        editingEndpointId = null;
+        newEndpointKey = '';
+        newEndpointTitle = '';
+        newEndpointPattern = '';
+    }
 
     $: visibleFlinkJobs = $flinkJobs.data.filter(job => {
         let nameMatch = true;
@@ -113,10 +185,40 @@
     function totalResources(flinkJob) {
         return flinkJob.resources.jm.replicas + flinkJob.resources.tm.replicas;
     }
+
+    // Get all endpoint types (both default and custom)
+    $: allEndpoints = (() => {
+        const endpoints = [];
+
+        // Add default endpoints with their titles
+        if ($appConfig?.endpointPathPatterns) {
+            const defaultEndpoints = [
+                { key: 'flink-ui', title: 'Flink UI' },
+                { key: 'flink-api', title: 'Flink API' },
+                { key: 'metrics', title: 'Metrics' },
+                { key: 'logs', title: 'Logs' }
+            ];
+
+            defaultEndpoints.forEach(endpoint => {
+                if ($appConfig.endpointPathPatterns[endpoint.key]) {
+                    endpoints.push(endpoint);
+                }
+            });
+        }
+
+        // Add custom endpoints
+        if ($settings?.customEndpoints && Array.isArray($settings.customEndpoints)) {
+            $settings.customEndpoints.forEach(endpoint => {
+                endpoints.push({ key: endpoint.key, title: endpoint.title });
+            });
+        }
+
+        return endpoints;
+    })();
 </script>
 
 <Modal bind:showModal={showSettingsModal}>
-    <div class="space-y-4">
+    <div class="space-y-6">
         <div>
             <label for="refreshInterval" class="block text-sm font-semibold text-gray-700 mb-2">Refresh Interval</label>
             <select id="refreshInterval" name="refreshInterval" bind:value={$settings.refreshInterval}
@@ -147,6 +249,113 @@
                     <span class="text-sm text-gray-700">Show Image</span>
                 </label>
             </div>
+        </div>
+
+        <!-- Custom Endpoints Section -->
+        <div class="border-t pt-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">Custom Endpoints</h3>
+
+            <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p class="text-xs text-gray-600 mb-2">
+                    Add custom external endpoints that will appear for each job. You can use these variables in the pattern:
+                </p>
+                <ul class="text-xs text-gray-600 space-y-1 ml-4">
+                    <li><code class="bg-gray-100 px-1 rounded">$jobName</code> - Flink job name</li>
+                    <li><code class="bg-gray-100 px-1 rounded">$namespace</code> - Kubernetes namespace</li>
+                    <li><code class="bg-gray-100 px-1 rounded">$metadata.KEY</code> - Metadata labels from deployment</li>
+                </ul>
+            </div>
+
+            <!-- Add/Edit Form -->
+            <div class="space-y-3 mb-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                    <label for="endpointKey" class="block text-xs font-medium text-gray-700 mb-1">Key (unique identifier)</label>
+                    <input
+                        id="endpointKey"
+                        type="text"
+                        bind:value={newEndpointKey}
+                        placeholder="e.g., github-repo"
+                        class="w-full input-modern text-sm"
+                    />
+                </div>
+                <div>
+                    <label for="endpointTitle" class="block text-xs font-medium text-gray-700 mb-1">Title (display name)</label>
+                    <input
+                        id="endpointTitle"
+                        type="text"
+                        bind:value={newEndpointTitle}
+                        placeholder="e.g., GitHub Repository"
+                        class="w-full input-modern text-sm"
+                    />
+                </div>
+                <div>
+                    <label for="endpointPattern" class="block text-xs font-medium text-gray-700 mb-1">URL Pattern</label>
+                    <input
+                        id="endpointPattern"
+                        type="text"
+                        bind:value={newEndpointPattern}
+                        placeholder="e.g., https://github.com/org/$jobName"
+                        class="w-full input-modern text-sm"
+                    />
+                </div>
+                <div class="flex gap-2">
+                    <button
+                        type="button"
+                        on:click={addCustomEndpoint}
+                        class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
+                    >
+                        <Fa fw icon={editingEndpointId ? faEdit : faPlus} />
+                        {editingEndpointId ? 'Update' : 'Add'} Endpoint
+                    </button>
+                    {#if editingEndpointId}
+                    <button
+                        type="button"
+                        on:click={cancelEdit}
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors text-sm"
+                    >
+                        Cancel
+                    </button>
+                    {/if}
+                </div>
+            </div>
+
+            <!-- List of Custom Endpoints -->
+            {#if $settings.customEndpoints && $settings.customEndpoints.length > 0}
+            <div class="space-y-2">
+                <p class="text-xs font-medium text-gray-600 mb-2">Configured Endpoints:</p>
+                {#each $settings.customEndpoints as endpoint (endpoint.id)}
+                <div class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-mono text-sm text-gray-800">{endpoint.title}</span>
+                            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">({endpoint.key})</span>
+                        </div>
+                        <div class="text-xs text-gray-600 font-mono truncate">{endpoint.pattern}</div>
+                    </div>
+                    <div class="flex gap-2 ml-4">
+                        <button
+                            type="button"
+                            on:click={() => editCustomEndpoint(endpoint)}
+                            class="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Edit"
+                        >
+                            <Fa fw icon={faEdit} />
+                        </button>
+                        <button
+                            type="button"
+                            on:click={() => deleteCustomEndpoint(endpoint.id)}
+                            class="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Delete"
+                        >
+                            <Fa fw icon={faTrash} />
+                        </button>
+                    </div>
+                </div>
+                {/each}
+            </div>
+            {:else}
+            <p class="text-sm text-gray-500 text-center py-4">No custom endpoints configured yet.</p>
+            {/if}
         </div>
     </div>
 </Modal>
@@ -367,14 +576,11 @@
                             <span class="text-gray-600 text-sm">{formatStartTime(flinkJob.startTime)}</span>
                         </td>
                         <td class="p-4">
-                            <p>
-                                <ExternalEndpoint type="flink-ui" title="Flink UI" jobName="{flinkJob.name}" />
-                                <ExternalEndpoint type="flink-api" title="Flink API" jobName="{flinkJob.name}" />
-                            </p>
-                            <p>
-                                <ExternalEndpoint type="metrics" title="Metrics" jobName="{flinkJob.name}" />
-                                <ExternalEndpoint type="logs" title="Logs" jobName="{flinkJob.name}" />
-                            </p>
+                            <div class="flex flex-wrap gap-1">
+                                {#each allEndpoints as endpoint}
+                                    <ExternalEndpoint type="{endpoint.key}" title="{endpoint.title}" jobName="{flinkJob.name}" />
+                                {/each}
+                            </div>
                         </td>
                     </tr>
                 {/each}
@@ -417,12 +623,11 @@
                         </p>
                         {/if}
                     </div>
-                    <p>
-                        <ExternalEndpoint type="flink-ui" title="Flink UI" jobName="{flinkJob.name}" />
-                        <ExternalEndpoint type="flink-api" title="Flink API" jobName="{flinkJob.name}" />
-                        <ExternalEndpoint type="metrics" title="Metrics" jobName="{flinkJob.name}" />
-                        <ExternalEndpoint type="logs" title="Logs" jobName="{flinkJob.name}" />
-                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        {#each allEndpoints as endpoint}
+                            <ExternalEndpoint type="{endpoint.key}" title="{endpoint.title}" jobName="{flinkJob.name}" />
+                        {/each}
+                    </div>
                 </div>
             {/each}
             </div>

@@ -5,7 +5,8 @@ const defaults = {
     'displayMode': 'tabular',
     'showJobParallelism': true,
     'showJobFlinkVersion': true,
-    'showJobImage': true
+    'showJobImage': true,
+    'customEndpoints': [] // User-defined custom endpoints
 };
 const stored = JSON.parse(localStorage.getItem('heimdall_settings'));
 

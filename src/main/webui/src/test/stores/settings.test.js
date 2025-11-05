@@ -8,7 +8,8 @@ describe('settings store', () => {
     'displayMode': 'tabular',
     'showJobParallelism': true,
     'showJobFlinkVersion': true,
-    'showJobImage': true
+    'showJobImage': true,
+    'customEndpoints': []
   };
 
   beforeEach(() => {
@@ -95,5 +96,45 @@ describe('settings store', () => {
 
     value = get(settings);
     expect(value.displayMode).toBe('tabular');
+  });
+
+  it('should handle custom endpoints', () => {
+    const customEndpoint = {
+      id: '1',
+      key: 'github-repo',
+      title: 'GitHub Repo',
+      pattern: 'https://github.com/org/$jobName'
+    };
+
+    settings.update(s => ({
+      ...s,
+      customEndpoints: [...s.customEndpoints, customEndpoint]
+    }));
+
+    const value = get(settings);
+    expect(value.customEndpoints).toHaveLength(1);
+    expect(value.customEndpoints[0]).toEqual(customEndpoint);
+  });
+
+  it('should persist custom endpoints to localStorage', () => {
+    const customEndpoint = {
+      id: '1',
+      key: 'confluence',
+      title: 'Confluence Docs',
+      pattern: 'https://confluence.example.com/$jobName'
+    };
+
+    settings.update(s => ({
+      ...s,
+      customEndpoints: [...s.customEndpoints, customEndpoint]
+    }));
+
+    expect(localStorage.setItem).toHaveBeenCalled();
+    const callArgs = localStorage.setItem.mock.calls[localStorage.setItem.mock.calls.length - 1];
+    expect(callArgs[0]).toBe('heimdall_settings');
+
+    const savedValue = JSON.parse(callArgs[1]);
+    expect(savedValue.customEndpoints).toHaveLength(1);
+    expect(savedValue.customEndpoints[0]).toEqual(customEndpoint);
   });
 });
