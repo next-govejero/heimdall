@@ -93,7 +93,7 @@ jobs:
 
           echo "Using version: $version"
           echo "heimdall_version=$version" >> "$GITHUB_ENV"
-          gradle build -i -Pversion=$version -Dquarkus.container-image.build=true -Dquarkus.container-image.image=$FULL_IMAGE_NAME:$version -Dquarkus.container-image.push=true
+          gradle build -i -Pversion=$version -Dquarkus.container-image.build=true -Dquarkus.container-image.image=$FULL_IMAGE_NAME:$version -Dquarkus.container-image.push=true -Dquarkus.container-image.username=${{ github.actor }} -Dquarkus.container-image.password=${{ secrets.GITHUB_TOKEN }}
 
       - name: Tag and push additional Docker tags
         if: "!contains(env.heimdall_version, 'SNAPSHOT')"
