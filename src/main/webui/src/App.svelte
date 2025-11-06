@@ -16,7 +16,7 @@
     <FlinkJobs/>
     <div class="mt-auto pt-4 text-center text-gray-500">
       <Fa fw icon={faGithub} />
-      <a href="https://github.com/sap1ens/heimdall" target="_blank" class="underline hover:no-underline">sap1ens/heimdall</a>
+      <a href="https://github.com/next-govejero/heimdall" target="_blank" class="underline hover:no-underline">next-govejero/heimdall</a>
       {#if $appConfig?.appVersion}
       · v{$appConfig?.appVersion}
       {/if}

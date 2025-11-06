@@ -1,7 +1,7 @@
 # Heimdall
 
 [![Build Status](https://github.com/next-govejero/heimdall/actions/workflows/build.yml/badge.svg)](https://github.com/next-govejero/heimdall/actions/workflows/build.yml)
-[![Docker Image](https://ghcr-badge.egpl.dev/sap1ens/heimdall/latest_tag?trim=major&label=latest)](https://github.com/sap1ens/heimdall/pkgs/container/heimdall)
+[![Docker Image](https://ghcr-badge.egpl.dev/next-govejero/heimdall/latest_tag?trim=major&label=latest)](https://github.com/next-govejero/heimdall/pkgs/container/heimdall)
 
 Heimdall is a dashboard for operating Flink jobs and deployments. The built-in Flink UI is extremely useful when dealing with
 a single job, but what if you have 10, 20, or 100 jobs? Heimdall helps you keep track of all your Flink jobs by searching, filtering, sorting, and navigating them from a single unified interface.
@@ -36,15 +36,15 @@ Read more in the blog: [Heimdall: Making Operating Flink Deployments a Bit Easie
 ## Quick (and Dirty) Start
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/sap1ens/heimdall/main/tools/k8s-operator/service-account.yaml
-kubectl run heimdall --image=ghcr.io/sap1ens/heimdall:0.10.0 --port=8080 --overrides='{ "spec": { "serviceAccount": "heimdall-service-account" }  }'
+kubectl apply -f https://raw.githubusercontent.com/next-govejero/heimdall/main/tools/k8s-operator/service-account.yaml
+kubectl run heimdall --image=ghcr.io/next-govejero/heimdall:0.10.0 --port=8080 --overrides='{ "spec": { "serviceAccount": "heimdall-service-account" }  }'
 kubectl port-forward heimdall 8080:8080
 open http://localhost:8080
 ```
 
 ## Installation
 
-Heimdall is available as a Docker container [here](https://github.com/sap1ens/heimdall/pkgs/container/heimdall). Since only
+Heimdall is available as a Docker container [here](https://github.com/next-govejero/heimdall/pkgs/container/heimdall). Since only
 Flink Kubernetes Operator is available at the moment, you'd typically deploy Heimdall as a pod or deployment in the same Kubernetes cluster where your Flink jobs are running.
 
 ### Deployment Requirements
