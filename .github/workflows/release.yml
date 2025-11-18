@@ -59,8 +59,8 @@ jobs:
       - name: Set up Docker Buildx for cross-platform builds
         uses: docker/setup-buildx-action@v3
         with:
+          driver: docker
           install: true
-          driver-opts: network=host
 
       - name: Build, tag, and push image
         env:
@@ -93,7 +93,7 @@ jobs:
 
           echo "Using version: $version"
           echo "heimdall_version=$version" >> "$GITHUB_ENV"
-          gradle build -i -Pversion=$version -Dquarkus.container-image.build=true -Dquarkus.container-image.image=$FULL_IMAGE_NAME:$version -Dquarkus.container-image.push=true -Dquarkus.container-image.username=${{ github.actor }} -Dquarkus.container-image.password=${{ secrets.GITHUB_TOKEN }}
+          gradle build -i -Pversion=$version -Dquarkus.container-image.build=true -Dquarkus.container-image.image=$FULL_IMAGE_NAME:$version -Dquarkus.container-image.push=true
 
       - name: Tag and push additional Docker tags
         if: "!contains(env.heimdall_version, 'SNAPSHOT')"
