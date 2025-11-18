@@ -61,6 +61,8 @@ jobs:
 
       - name: Determine version
         id: version
+        env:
+          FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         run: |
           version=$(gradle properties --no-daemon --console=plain -q | grep "^version:" | awk '{printf $2}')
 
@@ -91,6 +93,17 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "heimdall_version=$version" >> "$GITHUB_ENV"
 
+          # Prepare Docker tags
+          # For release versions: push both version tag and latest tag
+          # For snapshot versions: only push version tag
+          if [[ ! "$version" =~ SNAPSHOT ]]; then
+              echo "tags=$FULL_IMAGE_NAME:$version,$FULL_IMAGE_NAME:latest" >> "$GITHUB_OUTPUT"
+              echo "Publishing tags: $version, latest"
+          else
+              echo "tags=$FULL_IMAGE_NAME:$version" >> "$GITHUB_OUTPUT"
+              echo "Publishing tag: $version"
+          fi
+
       - name: Build with Gradle
         run: gradle build -i -Pversion=${{ steps.version.outputs.version }}
 
@@ -101,17 +114,7 @@ jobs:
           file: src/main/docker/Dockerfile.jvm
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
-
-      - name: Tag and push additional Docker tags
-        if: "!contains(env.heimdall_version, 'SNAPSHOT')"
-        env:
-          FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        run: |
-          # Tag as 'latest' for release versions using buildx imagetools
-          # This preserves the multi-platform manifest list
-          docker buildx imagetools create -t $FULL_IMAGE_NAME:latest $FULL_IMAGE_NAME:${{ env.heimdall_version }}
-          echo "Tagged and pushed as 'latest'"
+          tags: ${{ steps.version.outputs.tags }}
 
       - name: Git tag
         uses: rickstaa/action-create-tag@v1
