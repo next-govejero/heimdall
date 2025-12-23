@@ -4,6 +4,7 @@ import io.smallrye.config.ConfigMapping;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @ConfigMapping(prefix = "heimdall")
 public interface AppConfig {
@@ -12,6 +13,10 @@ public interface AppConfig {
   Map<String, String> patterns();
 
   Map<String, String> endpointPathPatterns();
+
+  // Optional version property to prevent ConfigValidationException
+  // when heimdall.version is present in runtime defaults
+  Optional<String> version();
 
   interface Joblocator {
     K8sOperator k8sOperator();
