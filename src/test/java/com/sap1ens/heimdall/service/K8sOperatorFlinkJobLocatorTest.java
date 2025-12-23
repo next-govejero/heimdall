@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.apache.flink.kubernetes.operator.api.FlinkDeployment;
 import org.apache.flink.kubernetes.operator.api.spec.FlinkDeploymentSpec;
@@ -179,6 +180,11 @@ public class K8sOperatorFlinkJobLocatorTest {
     @Override
     public Map<String, String> endpointPathPatterns() {
       return null;
+    }
+
+    @Override
+    public Optional<String> version() {
+      return Optional.empty();
     }
   }
 }

@@ -41,6 +41,11 @@ public class AppConfigTest {
           public java.util.Map<String, String> endpointPathPatterns() {
             return java.util.Map.of();
           }
+
+          @Override
+          public java.util.Optional<String> version() {
+            return java.util.Optional.empty();
+          }
         };
 
     var namespaces = mockConfig.joblocator().k8sOperator().namespacesToWatch();
@@ -83,6 +88,11 @@ public class AppConfigTest {
           public java.util.Map<String, String> endpointPathPatterns() {
             return java.util.Map.of();
           }
+
+          @Override
+          public java.util.Optional<String> version() {
+            return java.util.Optional.empty();
+          }
         };
 
     var namespaces = mockConfig.joblocator().k8sOperator().namespacesToWatch();
@@ -123,6 +133,11 @@ public class AppConfigTest {
           public java.util.Map<String, String> endpointPathPatterns() {
             return java.util.Map.of();
           }
+
+          @Override
+          public java.util.Optional<String> version() {
+            return java.util.Optional.empty();
+          }
         };
 
     var namespaces = mockConfig.joblocator().k8sOperator().namespacesToWatch();
@@ -162,6 +177,11 @@ public class AppConfigTest {
           public java.util.Map<String, String> endpointPathPatterns() {
             return java.util.Map.of();
           }
+
+          @Override
+          public java.util.Optional<String> version() {
+            return java.util.Optional.empty();
+          }
         };
 
     var namespaces = mockConfig.joblocator().k8sOperator().namespacesToWatch();
@@ -200,6 +220,11 @@ public class AppConfigTest {
           @Override
           public java.util.Map<String, String> endpointPathPatterns() {
             return java.util.Map.of();
+          }
+
+          @Override
+          public java.util.Optional<String> version() {
+            return java.util.Optional.empty();
           }
         };
 
